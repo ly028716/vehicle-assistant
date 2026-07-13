@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-    namespace = "com.example.vehicle_assistant"
+    namespace = "com.ly028716.vehicleassistant"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.example.vehicle_assistant"
-        minSdk = 33
+        applicationId = "com.ly028716.vehicleassistant"
+        minSdk = 30
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"

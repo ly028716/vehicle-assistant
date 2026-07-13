@@ -1,4 +1,4 @@
-package com.example.vehicle_assistant.ui.theme
+package com.ly028716.vehicleassistant.ui.theme
 
 import android.app.Activity
 import android.os.Build
