@@ -17,6 +17,7 @@ data class VehicleProfileUiState(
     val licensePlate: String = "",
     val mileage: String = "",
     val fuelType: FuelType = FuelType.GASOLINE,
+    val vehicleId: Long? = null,
     val isSaving: Boolean = false,
     val brandError: String? = null,
     val modelError: String? = null,
@@ -44,6 +45,28 @@ class VehicleProfileViewModel(
 ) : ViewModel() {
     private val mutableUiState = MutableStateFlow(VehicleProfileUiState())
     val uiState: StateFlow<VehicleProfileUiState> = mutableUiState.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            repository.observeVehicle().collect { vehicle ->
+                if (vehicle != null) {
+                    mutableUiState.update {
+                        it.copy(
+                            brand = vehicle.brand,
+                            model = vehicle.model,
+                            licensePlate = vehicle.licensePlate.orEmpty(),
+                            mileage = vehicle.currentMileage.toString(),
+                            fuelType = vehicle.fuelType,
+                            vehicleId = vehicle.id,
+                            brandError = null,
+                            modelError = null,
+                            mileageError = null,
+                        )
+                    }
+                }
+            }
+        }
+    }
 
     fun onEvent(event: VehicleProfileEvent) {
         when (event) {
@@ -87,7 +110,11 @@ class VehicleProfileViewModel(
             currentMileage = requireNotNull(mileage),
             fuelType = state.fuelType,
         )
-        val result = repository.createVehicle(input)
+        val result = if (state.vehicleId == null) {
+            repository.createVehicle(input)
+        } else {
+            repository.updateVehicle(input).map { state.vehicleId }
+        }
         mutableUiState.update {
             it.copy(
                 isSaving = false,
