@@ -3,6 +3,7 @@ package com.ly.vehicleassistant.data.repository
 import androidx.room.withTransaction
 import com.ly.vehicleassistant.data.local.AppDatabase
 import com.ly.vehicleassistant.data.model.MaintenanceInput
+import com.ly.vehicleassistant.data.model.MaintenanceRecord
 import com.ly.vehicleassistant.data.model.RepairInput
 import com.ly.vehicleassistant.data.model.Vehicle
 import com.ly.vehicleassistant.data.model.VehicleInput
@@ -21,6 +22,9 @@ class RoomVehicleRepository(
     private val repairDao = database.repairRecordDao()
 
     override fun observeVehicle(): Flow<Vehicle?> = vehicleDao.observeVehicle().map { it?.toVehicle() }
+
+    override fun observeMaintenanceRecords(): Flow<List<MaintenanceRecord>> =
+        maintenanceDao.observeAll().map { records -> records.map { it.toMaintenanceRecord() } }
 
     override suspend fun createVehicle(input: VehicleInput): Result<Long> = runCatching {
         check(vehicleDao.getVehicle() == null) { "第一版仅支持一辆车" }
@@ -74,6 +78,10 @@ class RoomVehicleRepository(
             updateVehicleMileage(vehicle, input.mileage)
             id
         }
+    }
+
+    override suspend fun deleteMaintenance(id: Long): Result<Unit> = runCatching {
+        maintenanceDao.deleteById(id)
     }
 
     override suspend fun deleteAllVehicleData(): Result<Unit> = runCatching {
