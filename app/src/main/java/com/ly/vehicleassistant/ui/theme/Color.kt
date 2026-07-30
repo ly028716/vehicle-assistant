@@ -1,4 +1,4 @@
-package com.ly028716.vehicleassistant.ui.theme
+package com.ly.vehicleassistant.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

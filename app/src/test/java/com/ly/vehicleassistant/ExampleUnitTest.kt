@@ -1,4 +1,4 @@
-package com.ly028716.vehicleassistant
+package com.ly.vehicleassistant
 
 import org.junit.Test
 
