@@ -1,6 +1,7 @@
 package com.ly.vehicleassistant
 
 import android.os.Bundle
+import androidx.room.Room
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -8,10 +9,21 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import com.ly.vehicleassistant.data.local.AppDatabase
+import com.ly.vehicleassistant.data.repository.RoomVehicleRepository
 import com.ly.vehicleassistant.ui.app.AppNavHost
 import com.ly.vehicleassistant.ui.theme.VehicleassistantTheme
 
 class MainActivity : ComponentActivity() {
+    private val repository by lazy {
+        val database = Room.databaseBuilder(
+            applicationContext,
+            AppDatabase::class.java,
+            "vehicle-assistant.db",
+        ).build()
+        RoomVehicleRepository(database)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -19,7 +31,7 @@ class MainActivity : ComponentActivity() {
             VehicleassistantTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     Scaffold(modifier = Modifier.fillMaxSize()) { contentPadding ->
-                        AppNavHost(contentPadding)
+                        AppNavHost(repository = repository, contentPadding = contentPadding)
                     }
                 }
             }

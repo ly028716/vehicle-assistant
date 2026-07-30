@@ -1,6 +1,7 @@
 package com.ly.vehicleassistant.ui.app
 
 import androidx.compose.material3.Text
+import androidx.compose.material3.Button
 import androidx.compose.runtime.Composable
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,9 +10,14 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.ly.vehicleassistant.domain.repository.VehicleRepository
+import com.ly.vehicleassistant.ui.vehicle.VehicleProfileScreen
 
 @Composable
-fun AppNavHost(contentPadding: PaddingValues = PaddingValues()) {
+fun AppNavHost(
+    repository: VehicleRepository,
+    contentPadding: PaddingValues = PaddingValues(),
+) {
     val navController = rememberNavController()
 
     NavHost(
@@ -22,7 +28,9 @@ fun AppNavHost(contentPadding: PaddingValues = PaddingValues()) {
             .padding(contentPadding)
     ) {
         composable(Routes.Home) {
-            Text("车主用车助手首页")
+            Button(onClick = { navController.navigate(Routes.Vehicle) }) {
+                Text("车辆档案")
+            }
         }
         composable(Routes.Records) {
             Text("Records")
@@ -31,7 +39,7 @@ fun AppNavHost(contentPadding: PaddingValues = PaddingValues()) {
             Text("Profile")
         }
         composable(Routes.Vehicle) {
-            Text("Vehicle")
+            VehicleProfileScreen(repository)
         }
         composable(Routes.Maintenance) {
             Text("Maintenance")
