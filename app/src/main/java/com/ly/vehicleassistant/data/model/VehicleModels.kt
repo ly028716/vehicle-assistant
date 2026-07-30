@@ -81,6 +81,16 @@ data class MaintenanceRecord(
     val createdAt: Instant,
 )
 
+data class MaintenanceInput(
+    val dateEpochDay: Long,
+    val mileage: Int,
+    val type: MaintenanceType,
+    val items: String,
+    val costCents: Long,
+    val shopName: String? = null,
+    val note: String? = null,
+)
+
 data class RepairRecord(
     val id: Long,
     val vehicleId: Long,
@@ -92,6 +102,16 @@ data class RepairRecord(
     val shopName: String?,
     val note: String?,
     val createdAt: Instant,
+)
+
+data class RepairInput(
+    val dateEpochDay: Long,
+    val mileage: Int,
+    val symptom: String,
+    val repairItems: String,
+    val costCents: Long,
+    val shopName: String? = null,
+    val note: String? = null,
 )
 
 data class Reminder(

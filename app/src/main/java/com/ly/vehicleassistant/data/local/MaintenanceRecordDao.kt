@@ -25,4 +25,7 @@ interface MaintenanceRecordDao {
 
     @Delete
     suspend fun delete(record: MaintenanceRecordEntity)
+
+    @Query("DELETE FROM maintenance_records")
+    suspend fun deleteAll()
 }
