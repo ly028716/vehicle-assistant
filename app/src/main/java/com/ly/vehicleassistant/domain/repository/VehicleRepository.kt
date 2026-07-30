@@ -19,6 +19,9 @@ interface VehicleRepository {
 
     suspend fun saveMaintenance(input: MaintenanceInput): Result<Long>
 
+    suspend fun updateMaintenance(id: Long, input: MaintenanceInput): Result<Unit> =
+        Result.failure(UnsupportedOperationException())
+
     suspend fun saveRepair(input: RepairInput): Result<Long>
 
     suspend fun deleteMaintenance(id: Long): Result<Unit> = Result.failure(UnsupportedOperationException())

@@ -19,6 +19,10 @@ data class MaintenanceUiState(
     val items: String = "",
     val costYuan: String = "",
     val type: MaintenanceType = MaintenanceType.ROUTINE,
+    val editingId: Long? = null,
+    val dateEpochDay: Long = LocalDate.now().toEpochDay(),
+    val date: String = LocalDate.now().toString(),
+    val dateError: String? = null,
     val mileageError: String? = null,
     val itemsError: String? = null,
     val errorMessage: String? = null,
@@ -30,6 +34,8 @@ sealed interface MaintenanceEvent {
     data class ItemsChanged(val value: String) : MaintenanceEvent
     data class CostChanged(val value: String) : MaintenanceEvent
     data class TypeChanged(val value: MaintenanceType) : MaintenanceEvent
+    data class DateChanged(val value: String) : MaintenanceEvent
+    data class DeleteClicked(val id: Long) : MaintenanceEvent
     data object SaveClicked : MaintenanceEvent
 }
 
@@ -51,6 +57,8 @@ class MaintenanceViewModel(private val repository: VehicleRepository) : ViewMode
             is MaintenanceEvent.ItemsChanged -> mutableUiState.update { it.copy(items = event.value, itemsError = null, saved = false) }
             is MaintenanceEvent.CostChanged -> mutableUiState.update { it.copy(costYuan = event.value, saved = false) }
             is MaintenanceEvent.TypeChanged -> mutableUiState.update { it.copy(type = event.value, saved = false) }
+            is MaintenanceEvent.DateChanged -> mutableUiState.update { it.copy(date = event.value, dateError = null, saved = false) }
+            is MaintenanceEvent.DeleteClicked -> viewModelScope.launch { delete(event.id) }
             MaintenanceEvent.SaveClicked -> viewModelScope.launch { save() }
         }
     }
@@ -58,30 +66,54 @@ class MaintenanceViewModel(private val repository: VehicleRepository) : ViewMode
     suspend fun save() {
         val state = mutableUiState.value
         val mileage = state.mileage.toIntOrNull()
+        val date = runCatching { LocalDate.parse(state.date) }.getOrNull()
         val mileageError = if (mileage == null || mileage < 0) "请输入非负里程" else null
         val itemsError = if (state.items.isBlank()) "请输入保养项目" else null
-        if (mileageError != null || itemsError != null) {
-            mutableUiState.update { it.copy(mileageError = mileageError, itemsError = itemsError) }
+        val dateError = if (date == null || date.isAfter(LocalDate.now())) "请输入有效且不晚于今天的日期" else null
+        if (mileageError != null || itemsError != null || dateError != null) {
+            mutableUiState.update { it.copy(mileageError = mileageError, itemsError = itemsError, dateError = dateError) }
             return
         }
         val costCents = ((state.costYuan.toDoubleOrNull() ?: 0.0) * 100).toLong()
-        val result = repository.saveMaintenance(
-            MaintenanceInput(
-                dateEpochDay = LocalDate.now().toEpochDay(),
+        val input = MaintenanceInput(
+                dateEpochDay = requireNotNull(date).toEpochDay(),
                 mileage = requireNotNull(mileage),
                 type = state.type,
                 items = state.items,
                 costCents = costCents,
-            ),
-        )
+            )
+        val result = state.editingId?.let { repository.updateMaintenance(it, input).map { it } }
+            ?: repository.saveMaintenance(input)
         mutableUiState.update {
             it.copy(
                 errorMessage = result.exceptionOrNull()?.message,
                 saved = result.isSuccess,
-                mileage = if (result.isSuccess) "" else it.mileage,
-                items = if (result.isSuccess) "" else it.items,
-                costYuan = if (result.isSuccess) "" else it.costYuan,
+                mileage = if (result.isSuccess && it.editingId == null) "" else it.mileage,
+                items = if (result.isSuccess && it.editingId == null) "" else it.items,
+                costYuan = if (result.isSuccess && it.editingId == null) "" else it.costYuan,
             )
+        }
+    }
+
+    fun edit(record: MaintenanceRecord) {
+        mutableUiState.update {
+            it.copy(
+                editingId = record.id,
+                dateEpochDay = record.date.toEpochDay(),
+                date = record.date.toString(),
+                mileage = record.mileage.toString(),
+                items = record.items,
+                costYuan = (record.costCents / 100.0).toString(),
+                type = record.type,
+                saved = false,
+            )
+        }
+    }
+
+    suspend fun delete(id: Long) {
+        val result = repository.deleteMaintenance(id)
+        if (result.isFailure) {
+            mutableUiState.update { it.copy(errorMessage = result.exceptionOrNull()?.message) }
         }
     }
 }

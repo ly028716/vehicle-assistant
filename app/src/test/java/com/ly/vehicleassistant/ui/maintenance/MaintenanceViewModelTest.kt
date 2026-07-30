@@ -55,17 +55,59 @@ class MaintenanceViewModelTest {
             assertTrue(viewModel.uiState.value.mileageError != null)
         } finally { Dispatchers.resetMain() }
     }
+
+    @Test
+    fun deleteRecordDelegatesToRepository() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        try {
+            val repository = FakeMaintenanceRepository()
+            val viewModel = MaintenanceViewModel(repository)
+
+            viewModel.delete(7)
+
+            assertEquals(7L, repository.deletedId)
+        } finally { Dispatchers.resetMain() }
+    }
+
+    @Test
+    fun updateRecordDelegatesToRepository() = runTest {
+        val repository = FakeMaintenanceRepository()
+        val input = MaintenanceInput(20_000, 21_000, MaintenanceType.ROUTINE, "机油机滤", 500_00)
+
+        repository.updateMaintenance(7, input)
+
+        assertEquals(7L, repository.updatedId)
+    }
+
+    @Test
+    fun editRecordLoadsFormAndSaveUpdatesSameRecord() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        try {
+            val repository = FakeMaintenanceRepository()
+            val viewModel = MaintenanceViewModel(repository)
+            val record = MaintenanceRecord(7, 1, LocalDate.ofEpochDay(20_000), 21_000, MaintenanceType.ROUTINE, "机油机滤", 500_00, null, null, Instant.EPOCH)
+
+            viewModel.edit(record)
+            viewModel.save()
+
+            assertEquals("21000", viewModel.uiState.value.mileage)
+            assertEquals(7L, repository.updatedId)
+        } finally { Dispatchers.resetMain() }
+    }
 }
 
 private class FakeMaintenanceRepository : VehicleRepository {
     private val vehicle = MutableStateFlow<Vehicle?>(null)
     val savedInputs = mutableListOf<MaintenanceInput>()
+    var deletedId: Long? = null
+    var updatedId: Long? = null
     override fun observeVehicle(): Flow<Vehicle?> = vehicle
     override fun observeMaintenanceRecords(): Flow<List<MaintenanceRecord>> = MutableStateFlow(emptyList())
     override suspend fun createVehicle(input: VehicleInput): Result<Long> = Result.success(1)
     override suspend fun updateVehicle(input: VehicleInput): Result<Unit> = Result.success(Unit)
     override suspend fun saveMaintenance(input: MaintenanceInput): Result<Long> { savedInputs += input; return Result.success(1) }
+    override suspend fun updateMaintenance(id: Long, input: MaintenanceInput): Result<Unit> { updatedId = id; return Result.success(Unit) }
     override suspend fun saveRepair(input: RepairInput): Result<Long> = Result.failure(NotImplementedError())
-    override suspend fun deleteMaintenance(id: Long): Result<Unit> = Result.success(Unit)
+    override suspend fun deleteMaintenance(id: Long): Result<Unit> { deletedId = id; return Result.success(Unit) }
     override suspend fun deleteAllVehicleData(): Result<Unit> = Result.success(Unit)
 }

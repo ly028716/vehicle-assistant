@@ -70,6 +70,13 @@ class RoomVehicleRepository(
         }
     }
 
+    override suspend fun updateMaintenance(id: Long, input: MaintenanceInput): Result<Unit> = runCatching {
+        database.withTransaction {
+            val existing = requireNotNull(maintenanceDao.getById(id)) { "保养记录不存在" }
+            maintenanceDao.update(input.toEntity(existing.vehicleId, Instant.ofEpochMilli(existing.createdAtEpochMillis)).copy(id = id))
+        }
+    }
+
     override suspend fun saveRepair(input: RepairInput): Result<Long> = runCatching {
         database.withTransaction {
             val vehicle = requireNotNull(vehicleDao.getVehicle()) { "请先创建车辆" }

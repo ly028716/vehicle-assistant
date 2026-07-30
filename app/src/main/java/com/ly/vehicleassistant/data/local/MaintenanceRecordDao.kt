@@ -23,6 +23,9 @@ interface MaintenanceRecordDao {
     @Update
     suspend fun update(record: MaintenanceRecordEntity)
 
+    @Query("SELECT * FROM maintenance_records WHERE id = :id LIMIT 1")
+    suspend fun getById(id: Long): MaintenanceRecordEntity?
+
     @Delete
     suspend fun delete(record: MaintenanceRecordEntity)
 
