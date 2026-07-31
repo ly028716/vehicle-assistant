@@ -2,15 +2,18 @@ package com.ly.vehicleassistant.ui.app
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -29,7 +32,6 @@ import com.ly.vehicleassistant.ui.vehicle.VehicleProfileScreen
 @Composable
 fun AppNavHost(
     repository: VehicleRepository,
-    contentPadding: PaddingValues = PaddingValues(),
 ) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -37,27 +39,47 @@ fun AppNavHost(
     val tabRoutes = setOf(Routes.Home, Routes.Records, Routes.Profile)
 
     Scaffold(
-        modifier = Modifier.padding(contentPadding),
         bottomBar = {
             if (currentRoute in tabRoutes) {
-                NavigationBar {
-                    listOf(
-                        Routes.Home to "首页",
-                        Routes.Records to "记录",
-                        Routes.Profile to "我的",
-                    ).forEach { (route, label) ->
-                        NavigationBarItem(
-                            selected = currentRoute == route,
-                            onClick = {
-                                navController.navigate(route) {
-                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
+                Surface(shadowElevation = 3.dp) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .navigationBarsPadding(),
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            horizontalArrangement = Arrangement.SpaceEvenly,
+                        ) {
+                            listOf(
+                                Routes.Home to "首页",
+                                Routes.Records to "记录",
+                                Routes.Profile to "我的",
+                            ).forEach { (route, label) ->
+                                val selected = currentRoute == route
+                                TextButton(
+                                    onClick = {
+                                        navController.navigate(route) {
+                                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    },
+                                    modifier = Modifier.height(56.dp),
+                                ) {
+                                    Text(
+                                        text = label,
+                                        color = if (selected) {
+                                            MaterialTheme.colorScheme.primary
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                        },
+                                    )
                                 }
-                            },
-                            icon = {},
-                            label = { Text(label) },
-                        )
+                            }
+                        }
                     }
                 }
             }
