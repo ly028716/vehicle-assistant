@@ -25,6 +25,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.ly.vehicleassistant.domain.repository.VehicleRepository
 import com.ly.vehicleassistant.ui.home.HomeScreen
+import com.ly.vehicleassistant.ui.assistant.AssistantScreen
 import com.ly.vehicleassistant.ui.maintenance.MaintenanceScreen
 import com.ly.vehicleassistant.ui.profile.ProfileScreen
 import com.ly.vehicleassistant.ui.repair.RepairScreen
@@ -105,6 +106,7 @@ fun AppNavHost(
                 RecordsScreen(
                     onMaintenance = { navController.navigate(Routes.Maintenance) },
                     onRepair = { navController.navigate(Routes.Repair) },
+                    onAssistant = { navController.navigate(Routes.Assistant) },
                 )
             }
             composable(Routes.Profile) {
@@ -121,13 +123,13 @@ fun AppNavHost(
             composable(Routes.Vehicle) { VehicleProfileScreen(repository) }
             composable(Routes.Maintenance) { MaintenanceScreen(repository) }
             composable(Routes.Repair) { RepairScreen(repository) }
-            composable(Routes.Assistant) { Text("智能助手将在后续任务中实现") }
+            composable(Routes.Assistant) { AssistantScreen(repository) }
         }
     }
 }
 
 @Composable
-private fun RecordsScreen(onMaintenance: () -> Unit, onRepair: () -> Unit) {
+private fun RecordsScreen(onMaintenance: () -> Unit, onRepair: () -> Unit, onAssistant: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -135,6 +137,7 @@ private fun RecordsScreen(onMaintenance: () -> Unit, onRepair: () -> Unit) {
         Text("用车记录")
         Button(onClick = onMaintenance, modifier = Modifier.fillMaxWidth()) { Text("保养记录") }
         Button(onClick = onRepair, modifier = Modifier.fillMaxWidth()) { Text("维修记录") }
+        Button(onClick = onAssistant, modifier = Modifier.fillMaxWidth()) { Text("本地用车助手") }
     }
 }
 
