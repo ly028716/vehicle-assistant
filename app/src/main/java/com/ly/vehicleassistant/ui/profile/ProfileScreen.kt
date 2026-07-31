@@ -9,6 +9,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -64,24 +68,26 @@ fun ProfileScreen(
     }
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.fillMaxSize().padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Text("我的")
-        Button(onClick = onVehicle, modifier = Modifier.fillMaxWidth()) {
-            Text("车辆档案")
+        Text("我的车辆", style = MaterialTheme.typography.headlineMedium)
+        Text("管理车辆档案，也掌控属于你的用车数据。", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        ProfileActionCard("车辆档案", "查看和更新车型、里程与能源信息", onVehicle)
+        ProfileActionCard("数据导出", "导出不含车牌号的本地 JSON 备份") {
+            scope.launch { viewModel.prepareExport() }
         }
-        Button(
-            onClick = { scope.launch { viewModel.prepareExport() } },
+        Card(
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("导出车辆数据 JSON")
-        }
-        Button(
-            onClick = { showDeleteConfirmation = true },
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text("删除全部车辆数据")
+            Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("清空本地数据", style = MaterialTheme.typography.titleLarge)
+                Text("删除后无法恢复，请在确认已导出备份后再继续。", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                OutlinedButton(onClick = { showDeleteConfirmation = true }, modifier = Modifier.fillMaxWidth()) {
+                    Text("删除全部车辆数据")
+                }
+            }
         }
         state.errorMessage?.let { Text(it) }
     }
@@ -101,5 +107,19 @@ fun ProfileScreen(
                 Button(onClick = { showDeleteConfirmation = false }) { Text("取消") }
             },
         )
+    }
+}
+
+@Composable
+private fun ProfileActionCard(title: String, subtitle: String, onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+    ) {
+        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            Text(title, style = MaterialTheme.typography.titleLarge)
+            Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }

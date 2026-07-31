@@ -2,18 +2,22 @@ package com.ly.vehicleassistant.ui.app
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Article
+import androidx.compose.material.icons.filled.AutoStories
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -43,45 +47,24 @@ fun AppNavHost(
     Scaffold(
         bottomBar = {
             if (currentRoute in tabRoutes) {
-                Surface(shadowElevation = 3.dp) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .navigationBarsPadding(),
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp),
-                            horizontalArrangement = Arrangement.SpaceEvenly,
-                        ) {
-                            listOf(
-                                Routes.Home to "首页",
-                                Routes.Records to "记录",
-                                Routes.Profile to "我的",
-                            ).forEach { (route, label) ->
-                                val selected = currentRoute == route
-                                TextButton(
-                                    onClick = {
-                                        navController.navigate(route) {
-                                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                            launchSingleTop = true
-                                            restoreState = true
-                                        }
-                                    },
-                                    modifier = Modifier.height(56.dp),
-                                ) {
-                                    Text(
-                                        text = label,
-                                        color = if (selected) {
-                                            MaterialTheme.colorScheme.primary
-                                        } else {
-                                            MaterialTheme.colorScheme.onSurfaceVariant
-                                        },
-                                    )
+                NavigationBar(containerColor = MaterialTheme.colorScheme.background) {
+                    listOf(
+                        NavigationItem(Routes.Home, "首页", Icons.Filled.Home),
+                        NavigationItem(Routes.Records, "记录", Icons.AutoMirrored.Filled.Article),
+                        NavigationItem(Routes.Profile, "我的", Icons.Filled.Person),
+                    ).forEach { item ->
+                        NavigationBarItem(
+                            selected = currentRoute == item.route,
+                            onClick = {
+                                navController.navigate(item.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
-                            }
-                        }
+                            },
+                            icon = { androidx.compose.material3.Icon(item.icon, contentDescription = item.label) },
+                            label = { Text(item.label) },
+                        )
                     }
                 }
             }
@@ -131,15 +114,36 @@ fun AppNavHost(
 @Composable
 private fun RecordsScreen(onMaintenance: () -> Unit, onRepair: () -> Unit, onAssistant: () -> Unit) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.fillMaxSize().padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Text("用车记录")
-        Button(onClick = onMaintenance, modifier = Modifier.fillMaxWidth()) { Text("保养记录") }
-        Button(onClick = onRepair, modifier = Modifier.fillMaxWidth()) { Text("维修记录") }
-        Button(onClick = onAssistant, modifier = Modifier.fillMaxWidth()) { Text("本地用车助手") }
+        Text("用车记录", style = MaterialTheme.typography.headlineMedium)
+        Text("所有服务历史，都沉淀为下一次安心出行的依据。", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        RecordEntry("保养记录", "保养周期、项目与费用", onMaintenance)
+        RecordEntry("维修记录", "维修事项与解决状态", onRepair)
+        RecordEntry("本地用车助手", "基于本地记录快速查询", onAssistant)
     }
 }
+
+@Composable
+private fun RecordEntry(title: String, subtitle: String, onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+    ) {
+        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(title, style = MaterialTheme.typography.titleLarge)
+            Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+private data class NavigationItem(
+    val route: String,
+    val label: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+)
 
 private object Routes {
     const val Home = "home"
