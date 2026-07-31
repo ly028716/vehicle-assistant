@@ -23,8 +23,14 @@ interface RepairRecordDao {
     @Update
     suspend fun update(record: RepairRecordEntity)
 
+    @Query("SELECT * FROM repair_records WHERE id = :id LIMIT 1")
+    suspend fun getById(id: Long): RepairRecordEntity?
+
     @Delete
     suspend fun delete(record: RepairRecordEntity)
+
+    @Query("DELETE FROM repair_records WHERE id = :id")
+    suspend fun deleteById(id: Long)
 
     @Query("DELETE FROM repair_records")
     suspend fun deleteAll()

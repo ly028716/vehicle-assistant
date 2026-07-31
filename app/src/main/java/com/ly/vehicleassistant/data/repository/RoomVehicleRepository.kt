@@ -5,6 +5,7 @@ import com.ly.vehicleassistant.data.local.AppDatabase
 import com.ly.vehicleassistant.data.model.MaintenanceInput
 import com.ly.vehicleassistant.data.model.MaintenanceRecord
 import com.ly.vehicleassistant.data.model.RepairInput
+import com.ly.vehicleassistant.data.model.RepairRecord
 import com.ly.vehicleassistant.data.model.Vehicle
 import com.ly.vehicleassistant.data.model.VehicleInput
 import com.ly.vehicleassistant.domain.repository.VehicleRepository
@@ -25,6 +26,9 @@ class RoomVehicleRepository(
 
     override fun observeMaintenanceRecords(): Flow<List<MaintenanceRecord>> =
         maintenanceDao.observeAll().map { records -> records.map { it.toMaintenanceRecord() } }
+
+    override fun observeRepairRecords(): Flow<List<RepairRecord>> =
+        repairDao.observeAll().map { records -> records.map { it.toRepairRecord() } }
 
     override suspend fun createVehicle(input: VehicleInput): Result<Long> = runCatching {
         check(vehicleDao.getVehicle() == null) { "第一版仅支持一辆车" }
@@ -86,6 +90,13 @@ class RoomVehicleRepository(
             id
         }
     }
+
+    override suspend fun updateRepair(id: Long, input: RepairInput): Result<Unit> = runCatching {
+        val existing = requireNotNull(repairDao.getById(id)) { "维修记录不存在" }
+        repairDao.update(input.toEntity(existing.vehicleId, Instant.ofEpochMilli(existing.createdAtEpochMillis)).copy(id = id))
+    }
+
+    override suspend fun deleteRepair(id: Long): Result<Unit> = runCatching { repairDao.deleteById(id) }
 
     override suspend fun deleteMaintenance(id: Long): Result<Unit> = runCatching {
         maintenanceDao.deleteById(id)

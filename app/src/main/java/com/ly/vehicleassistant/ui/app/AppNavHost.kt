@@ -14,6 +14,7 @@ import androidx.navigation.compose.rememberNavController
 import com.ly.vehicleassistant.domain.repository.VehicleRepository
 import com.ly.vehicleassistant.ui.vehicle.VehicleProfileScreen
 import com.ly.vehicleassistant.ui.maintenance.MaintenanceScreen
+import com.ly.vehicleassistant.ui.repair.RepairScreen
 
 @Composable
 fun AppNavHost(
@@ -52,7 +53,7 @@ fun AppNavHost(
             MaintenanceScreen(repository)
         }
         composable(Routes.Repair) {
-            Text("Repair")
+            RepairScreen(repository)
         }
         composable(Routes.Assistant) {
             Text("Assistant")
