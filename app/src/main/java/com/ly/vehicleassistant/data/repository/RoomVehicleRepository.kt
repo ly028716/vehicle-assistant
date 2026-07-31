@@ -8,9 +8,13 @@ import com.ly.vehicleassistant.data.model.RepairInput
 import com.ly.vehicleassistant.data.model.RepairRecord
 import com.ly.vehicleassistant.data.model.Vehicle
 import com.ly.vehicleassistant.data.model.VehicleInput
+import com.ly.vehicleassistant.data.export.ExportSnapshot
+import com.ly.vehicleassistant.data.model.Reminder
+import com.ly.vehicleassistant.domain.calculateReminder
 import com.ly.vehicleassistant.domain.repository.VehicleRepository
 import java.time.Instant
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 /** Room 持久化实现；页面层仅依赖 [VehicleRepository]。 */
@@ -109,6 +113,30 @@ class RoomVehicleRepository(
             val vehicle = vehicleDao.getVehicle()
             if (vehicle != null) vehicleDao.delete(vehicle)
         }
+    }
+
+    override suspend fun exportSnapshot(): ExportSnapshot = database.withTransaction {
+        val vehicle = vehicleDao.getVehicle()?.toVehicle()
+        val maintenanceRecords = maintenanceDao.observeAll().first().map { it.toMaintenanceRecord() }
+        val repairRecords = repairDao.observeAll().first().map { it.toRepairRecord() }
+        val latestMaintenance = maintenanceRecords.maxByOrNull { it.date }
+        val reminders = vehicle?.let {
+            listOf(
+                Reminder(
+                    status = calculateReminder(latestMaintenance, it.currentMileage, java.time.LocalDate.now()),
+                    lastMaintenanceId = latestMaintenance?.id,
+                    mileageUntilDue = null,
+                    daysUntilDue = null,
+                ),
+            )
+        }.orEmpty()
+        ExportSnapshot(
+            exportedAt = now().toString(),
+            vehicle = vehicle,
+            maintenanceRecords = maintenanceRecords,
+            repairRecords = repairRecords,
+            reminders = reminders,
+        )
     }
 
     private suspend fun maxMileage(currentMileage: Int): Int = listOfNotNull(

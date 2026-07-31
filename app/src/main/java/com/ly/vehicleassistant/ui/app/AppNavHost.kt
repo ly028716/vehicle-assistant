@@ -26,6 +26,7 @@ import androidx.navigation.compose.rememberNavController
 import com.ly.vehicleassistant.domain.repository.VehicleRepository
 import com.ly.vehicleassistant.ui.home.HomeScreen
 import com.ly.vehicleassistant.ui.maintenance.MaintenanceScreen
+import com.ly.vehicleassistant.ui.profile.ProfileScreen
 import com.ly.vehicleassistant.ui.repair.RepairScreen
 import com.ly.vehicleassistant.ui.vehicle.VehicleProfileScreen
 
@@ -107,7 +108,15 @@ fun AppNavHost(
                 )
             }
             composable(Routes.Profile) {
-                ProfileEntryScreen(onVehicle = { navController.navigate(Routes.Vehicle) })
+                ProfileScreen(
+                    repository = repository,
+                    onVehicle = { navController.navigate(Routes.Vehicle) },
+                    onDeleted = {
+                        navController.navigate(Routes.Home) {
+                            popUpTo(Routes.Home) { inclusive = true }
+                        }
+                    },
+                )
             }
             composable(Routes.Vehicle) { VehicleProfileScreen(repository) }
             composable(Routes.Maintenance) { MaintenanceScreen(repository) }
@@ -126,18 +135,6 @@ private fun RecordsScreen(onMaintenance: () -> Unit, onRepair: () -> Unit) {
         Text("用车记录")
         Button(onClick = onMaintenance, modifier = Modifier.fillMaxWidth()) { Text("保养记录") }
         Button(onClick = onRepair, modifier = Modifier.fillMaxWidth()) { Text("维修记录") }
-    }
-}
-
-@Composable
-private fun ProfileEntryScreen(onVehicle: () -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text("我的")
-        Button(onClick = onVehicle, modifier = Modifier.fillMaxWidth()) { Text("车辆档案") }
-        Text("数据导出和删除将在下一任务中提供。")
     }
 }
 
