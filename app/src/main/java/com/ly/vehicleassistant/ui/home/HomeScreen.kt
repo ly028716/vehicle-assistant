@@ -97,7 +97,8 @@ private fun HomeHeader() {
 private fun EmptyGarage(onEditVehicle: () -> Unit) {
     Card(
         shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Column(
             modifier = Modifier.padding(24.dp),
@@ -133,7 +134,8 @@ private fun EmptyGarage(onEditVehicle: () -> Unit) {
 private fun VehicleHero(vehicle: Vehicle) {
     Card(
         shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Column {
             Image(
@@ -172,17 +174,16 @@ private fun VehicleHero(vehicle: Vehicle) {
 @Composable
 private fun MaintenancePriority(status: ReminderStatus, onAddMaintenance: () -> Unit) {
     val isAttentionNeeded = status == ReminderStatus.DUE_SOON || status == ReminderStatus.OVERDUE
-    val containerColor = if (isAttentionNeeded) {
-        MaterialTheme.colorScheme.secondaryContainer
-    } else {
-        MaterialTheme.colorScheme.primaryContainer
-    }
     val contentColor = if (isAttentionNeeded) {
         MaterialTheme.colorScheme.secondary
     } else {
         MaterialTheme.colorScheme.primary
     }
-    Surface(color = containerColor, shape = RoundedCornerShape(24.dp)) {
+    Surface(
+        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(24.dp),
+        modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(24.dp)),
+    ) {
         Column(
             modifier = Modifier.padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),

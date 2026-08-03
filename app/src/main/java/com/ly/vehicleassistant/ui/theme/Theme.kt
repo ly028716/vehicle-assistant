@@ -13,9 +13,9 @@ private val LightColorScheme = lightColorScheme(
     secondaryContainer = AttentionAmberLight,
     background = WarmCanvas,
     onBackground = Ink,
-    surface = WarmCanvas,
+    surface = WarmSurface,
     onSurface = Ink,
-    surfaceVariant = WarmSurface,
+    surfaceVariant = GentleGreenSurface,
     onSurfaceVariant = MutedInk,
     outlineVariant = SoftLine,
 )

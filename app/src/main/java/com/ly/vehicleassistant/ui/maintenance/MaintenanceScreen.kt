@@ -2,32 +2,53 @@ package com.ly.vehicleassistant.ui.maintenance
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
-import com.ly.vehicleassistant.domain.repository.VehicleRepository
+import androidx.compose.foundation.text.KeyboardOptions
+import com.ly.vehicleassistant.data.model.MaintenanceRecord
 import com.ly.vehicleassistant.data.model.MaintenanceType
+import com.ly.vehicleassistant.domain.repository.VehicleRepository
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,95 +59,140 @@ fun MaintenanceScreen(repository: VehicleRepository) {
     var pendingDeleteId by remember { mutableStateOf<Long?>(null) }
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 28.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        item { Text("保养记录") }
         item {
-            OutlinedTextField(
-                value = state.date,
-                onValueChange = { viewModel.onEvent(MaintenanceEvent.DateChanged(it)) },
-                label = { Text("保养日期（yyyy-MM-dd）*") },
-                isError = state.dateError != null,
-                supportingText = state.dateError?.let { { Text(it) } },
-                modifier = Modifier.fillMaxWidth(),
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("保养记录", style = MaterialTheme.typography.headlineMedium)
+                Text("记录每次服务，让下一次养护更有把握。", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
         item {
-            ExposedDropdownMenuBox(
-                expanded = typeMenuExpanded,
-                onExpandedChange = { typeMenuExpanded = it },
+            Card(
+                shape = RoundedCornerShape(26.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
             ) {
-                OutlinedTextField(
-                    value = state.type.displayName(),
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("保养类型") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = typeMenuExpanded) },
-                    modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
-                )
-                ExposedDropdownMenu(expanded = typeMenuExpanded, onDismissRequest = { typeMenuExpanded = false }) {
-                    MaintenanceType.entries.forEach { type ->
-                        DropdownMenuItem(text = { Text(type.displayName()) }, onClick = {
-                            viewModel.onEvent(MaintenanceEvent.TypeChanged(type))
-                            typeMenuExpanded = false
-                        })
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(14.dp)) {
+                            androidx.compose.material3.Icon(
+                                imageVector = Icons.Filled.Add,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(9.dp).size(22.dp),
+                            )
+                        }
+                        Spacer(Modifier.width(10.dp))
+                        Column {
+                            Text(
+                                if (state.editingId == null) "新增保养" else "编辑保养记录",
+                                style = MaterialTheme.typography.titleLarge,
+                            )
+                            Text("完整记录日期、里程、项目与费用", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                    OutlinedTextField(
+                        value = state.date,
+                        onValueChange = { viewModel.onEvent(MaintenanceEvent.DateChanged(it)) },
+                        label = { Text("保养日期") },
+                        placeholder = { Text("yyyy-MM-dd") },
+                        isError = state.dateError != null,
+                        supportingText = state.dateError?.let { { Text(it) } },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                    )
+                    ExposedDropdownMenuBox(
+                        expanded = typeMenuExpanded,
+                        onExpandedChange = { typeMenuExpanded = it },
+                    ) {
+                        OutlinedTextField(
+                            value = state.type.displayName(),
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("保养类型") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = typeMenuExpanded) },
+                            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
+                        )
+                        ExposedDropdownMenu(expanded = typeMenuExpanded, onDismissRequest = { typeMenuExpanded = false }) {
+                            MaintenanceType.entries.forEach { type ->
+                                DropdownMenuItem(
+                                    text = { Text(type.displayName()) },
+                                    onClick = {
+                                        viewModel.onEvent(MaintenanceEvent.TypeChanged(type))
+                                        typeMenuExpanded = false
+                                    },
+                                )
+                            }
+                        }
+                    }
+                    OutlinedTextField(
+                        value = state.mileage,
+                        onValueChange = { viewModel.onEvent(MaintenanceEvent.MileageChanged(it)) },
+                        label = { Text("保养里程（公里）") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        isError = state.mileageError != null,
+                        supportingText = state.mileageError?.let { { Text(it) } },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                    )
+                    OutlinedTextField(
+                        value = state.items,
+                        onValueChange = { viewModel.onEvent(MaintenanceEvent.ItemsChanged(it)) },
+                        label = { Text("保养项目") },
+                        isError = state.itemsError != null,
+                        supportingText = state.itemsError?.let { { Text(it) } },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                    )
+                    OutlinedTextField(
+                        value = state.costYuan,
+                        onValueChange = { viewModel.onEvent(MaintenanceEvent.CostChanged(it)) },
+                        label = { Text("费用（元，可选）") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                    )
+                    Button(
+                        onClick = { viewModel.onEvent(MaintenanceEvent.SaveClicked) },
+                        modifier = Modifier.fillMaxWidth().height(52.dp),
+                    ) {
+                        Text(if (state.editingId == null) "保存保养记录" else "更新保养记录")
                     }
                 }
             }
         }
-        item {
-            OutlinedTextField(
-                value = state.mileage,
-                onValueChange = { viewModel.onEvent(MaintenanceEvent.MileageChanged(it)) },
-                label = { Text("保养里程（公里）*") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                isError = state.mileageError != null,
-                supportingText = state.mileageError?.let { { Text(it) } },
-                modifier = Modifier.fillMaxWidth(),
-            )
+        state.errorMessage?.let { message ->
+            item { Text(message, color = MaterialTheme.colorScheme.error) }
+        }
+        if (state.saved) {
+            item {
+                Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(16.dp)) {
+                    Text("保养记录已保存", modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp), color = MaterialTheme.colorScheme.onPrimaryContainer)
+                }
+            }
         }
         item {
-            OutlinedTextField(
-                value = state.items,
-                onValueChange = { viewModel.onEvent(MaintenanceEvent.ItemsChanged(it)) },
-                label = { Text("保养项目 *") },
-                isError = state.itemsError != null,
-                supportingText = state.itemsError?.let { { Text(it) } },
-                modifier = Modifier.fillMaxWidth(),
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("保养历史", style = MaterialTheme.typography.titleLarge)
+                Spacer(Modifier.width(8.dp))
+                Text("${state.records.size} 条记录", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+            }
         }
-        item {
-            OutlinedTextField(
-                value = state.costYuan,
-                onValueChange = { viewModel.onEvent(MaintenanceEvent.CostChanged(it)) },
-                label = { Text("费用（元，可选）") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-        item {
-            Button(
-                onClick = { viewModel.onEvent(MaintenanceEvent.SaveClicked) },
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text("保存保养记录") }
-        }
-        state.errorMessage?.let { message -> item { Text(message) } }
-        if (state.saved) item { Text("保养记录已保存") }
         if (state.records.isEmpty()) {
-            item { Text("暂无保养记录") }
+            item { EmptyMaintenanceHistory() }
         } else {
             items(state.records, key = { it.id }) { record ->
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Text(record.items)
-                    Text("${record.date} · ${record.mileage} km · ¥${record.costCents / 100.0}")
-                    Button(onClick = { viewModel.edit(record) }) {
-                        Text("编辑")
-                    }
-                    Button(onClick = { pendingDeleteId = record.id }) {
-                        Text("删除")
-                    }
-                }
+                MaintenanceHistoryCard(
+                    record = record,
+                    onEdit = { viewModel.edit(record) },
+                    onDelete = { pendingDeleteId = record.id },
+                )
             }
         }
     }
@@ -141,8 +207,65 @@ fun MaintenanceScreen(repository: VehicleRepository) {
                     pendingDeleteId = null
                 }) { Text("删除") }
             },
-            dismissButton = { Button(onClick = { pendingDeleteId = null }) { Text("取消") } },
+            dismissButton = { TextButton(onClick = { pendingDeleteId = null }) { Text("取消") } },
         )
+    }
+}
+
+@Composable
+private fun EmptyMaintenanceHistory() {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+    ) {
+        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            androidx.compose.material3.Icon(
+                imageVector = Icons.Filled.History,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(26.dp),
+            )
+            Text("还没有保养历史", style = MaterialTheme.typography.titleMedium)
+            Text("完成第一次保养后，服务记录会清晰地沉淀在这里。", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun MaintenanceHistoryCard(record: MaintenanceRecord, onEdit: () -> Unit, onDelete: () -> Unit) {
+    Card(
+        shape = RoundedCornerShape(22.dp),
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(13.dp)) {
+                    androidx.compose.material3.Icon(
+                        imageVector = Icons.Filled.Build,
+                        contentDescription = null,
+                        modifier = Modifier.padding(9.dp).size(20.dp),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                Spacer(Modifier.width(10.dp))
+                Column {
+                    Text(record.items, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text(record.type.displayName(), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                Text("${record.date} · ${record.mileage} km", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("¥${record.costCents / 100.0}", style = MaterialTheme.typography.titleMedium)
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = onEdit) { Text("编辑") }
+                TextButton(onClick = onDelete) { Text("删除", color = MaterialTheme.colorScheme.error) }
+            }
+        }
     }
 }
 

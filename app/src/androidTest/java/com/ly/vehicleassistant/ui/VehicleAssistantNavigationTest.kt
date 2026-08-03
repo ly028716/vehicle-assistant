@@ -16,6 +16,15 @@ class VehicleAssistantNavigationTest {
         composeRule.onNodeWithText("添加车辆档案").assertIsDisplayed()
         composeRule.onNodeWithText("记录").performClick()
         composeRule.onNodeWithText("保养记录").assertIsDisplayed()
+        composeRule.onNodeWithText("保养记录").performClick()
+        composeRule.onNodeWithText("新增保养").assertIsDisplayed()
+        composeRule.onNodeWithText("保养历史").assertIsDisplayed()
         composeRule.onNodeWithText("本地用车助手").assertIsDisplayed()
+    }
+    @Test fun repairScreenUsesTheServiceHistoryLayout() {
+        composeRule.onNodeWithText("记录").performClick()
+        composeRule.onNodeWithText("维修记录").performClick()
+        composeRule.onNodeWithText("新增维修").assertIsDisplayed()
+        composeRule.onNodeWithText("维修历史").assertIsDisplayed()
     }
 }
