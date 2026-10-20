@@ -1,9 +1,11 @@
 package com.ly.vehicleassistant.ui.home
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -16,22 +18,17 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.DirectionsCar
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -39,6 +36,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -54,276 +53,179 @@ fun HomeScreen(
     onEditVehicle: () -> Unit,
     onAddMaintenance: () -> Unit,
     onAddRepair: () -> Unit,
+    onViewRecords: () -> Unit,
 ) {
     val viewModel = remember(repository) { HomeViewModel(repository) }
     val summary by viewModel.uiState.collectAsState()
-
     LazyColumn(
-        contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 28.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp),
+        contentPadding = PaddingValues(bottom = 28.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         item { HomeHeader() }
-        val vehicle = summary.vehicle
-        if (vehicle == null) {
-            item { EmptyGarage(onEditVehicle) }
-        } else {
-            item { VehicleHero(vehicle) }
-            item { MaintenancePriority(summary.reminderStatus, onAddMaintenance) }
-            item {
-                LatestService(
-                    summary = summary,
-                    onAddMaintenance = onAddMaintenance,
-                    onAddRepair = onAddRepair,
-                )
-            }
-            item { SpendingSummary(summary) }
-        }
+        summary.vehicle?.let { vehicle ->
+            item { VehicleHero(vehicle, onEditVehicle) }
+            item { MaintenanceSignal(summary.reminderStatus, onAddMaintenance) }
+            item { QuietSummary(summary) }
+            item { RecentRecord(summary, onViewRecords, onAddMaintenance, onAddRepair) }
+        } ?: item { EmptyGarage(onEditVehicle) }
     }
 }
 
 @Composable
 private fun HomeHeader() {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text("车辆概览", style = MaterialTheme.typography.headlineMedium)
-        Text(
-            "把每一次养护，变成安心出行的底气",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodyMedium,
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 18.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text("我的爱车", style = MaterialTheme.typography.headlineMedium)
+        Spacer(Modifier.weight(1f))
+        Icon(Icons.Filled.NotificationsNone, contentDescription = "提醒", modifier = Modifier.size(25.dp))
+    }
+}
+
+@Composable
+private fun VehicleHero(vehicle: Vehicle, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier.fillMaxWidth().height(360.dp).clickable(onClick = onClick),
+    ) {
+        Image(
+            painter = painterResource(R.drawable.vehicle_home_hero_premium), contentDescription = "${vehicle.brand} ${vehicle.model} 车辆展示图",
+            contentScale = ContentScale.Crop, modifier = Modifier.matchParentSize(),
         )
+        Box(
+            Modifier.matchParentSize().background(
+                Brush.verticalGradient(
+                    0f to Color.Transparent,
+                    .58f to Color.Transparent,
+                    1f to Color(0x990D1414),
+                ),
+            ),
+        )
+        Column(
+            modifier = Modifier.align(Alignment.TopStart).padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(7.dp),
+        ) {
+            Text("本地车辆档案", color = Color.White.copy(alpha = .72f), style = MaterialTheme.typography.labelLarge)
+            Text("${vehicle.brand} ${vehicle.model}", color = Color.White, style = MaterialTheme.typography.titleLarge)
+        }
+        Column(
+            modifier = Modifier.align(Alignment.BottomStart).padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text("${vehicle.currentMileage.formatMileage()} km", color = Color.White, style = MaterialTheme.typography.displaySmall)
+            Text("总里程", color = Color.White.copy(alpha = .76f), style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+}
+
+@Composable
+private fun MaintenanceSignal(status: ReminderStatus, onClick: () -> Unit) {
+    val progress = when (status) {
+        ReminderStatus.NO_RECORD -> .06f
+        ReminderStatus.NOT_DUE -> .5f
+        ReminderStatus.DUE_SOON -> .82f
+        ReminderStatus.OVERDUE -> 1f
+    }
+    val tone = if (status == ReminderStatus.DUE_SOON || status == ReminderStatus.OVERDUE) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
+    Column(
+        modifier = Modifier.padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Text("MAINTENANCE", color = tone, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Medium)
+        Text(status.heroText(), style = MaterialTheme.typography.titleLarge)
+        Box(Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(4.dp)).background(MaterialTheme.colorScheme.outlineVariant)) {
+            Box(Modifier.fillMaxWidth(progress).height(3.dp).background(tone))
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(status.description(), modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+            Text("查看建议", color = tone, fontWeight = FontWeight.SemiBold, modifier = Modifier.clickable(onClick = onClick).padding(6.dp))
+            Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = tone, modifier = Modifier.size(18.dp))
+        }
+    }
+}
+
+@Composable
+private fun QuietSummary(summary: HomeSummary) {
+    Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+        SummaryLine("已记录", "${summary.recordCount} 次")
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        SummaryLine("累计投入", formatYuan(summary.totalCostCents))
+    }
+}
+
+@Composable
+private fun SummaryLine(label: String, value: String) {
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 17.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(label, style = MaterialTheme.typography.titleMedium)
+        Spacer(Modifier.weight(1f))
+        Text(value, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleMedium)
+    }
+}
+
+@Composable
+private fun RecentRecord(summary: HomeSummary, onViewRecords: () -> Unit, onAddMaintenance: () -> Unit, onAddRepair: () -> Unit) {
+    val maintenance = summary.latestMaintenance
+    val repair = summary.latestRepair
+    Column(modifier = Modifier.padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("最近记录", style = MaterialTheme.typography.titleLarge)
+        when {
+            maintenance != null -> RecordRow("保养", maintenance.items, "${maintenance.date} · ${maintenance.mileage.formatMileage()} km", formatYuan(maintenance.costCents), onViewRecords)
+            repair != null -> RecordRow("维修", repair.repairItems, "${repair.date} · ${repair.mileage.formatMileage()} km", formatYuan(repair.costCents), onViewRecords)
+            else -> EmptyRecords(onAddMaintenance, onAddRepair)
+        }
+    }
+}
+
+@Composable
+private fun RecordRow(kind: String, title: String, detail: String, cost: String, onClick: () -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(kind, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(detail, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            Text(cost, style = MaterialTheme.typography.titleMedium)
+            Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+        }
+    }
+}
+
+@Composable
+private fun EmptyRecords(onAddMaintenance: () -> Unit, onAddRepair: () -> Unit) {
+    Surface(border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), shape = RoundedCornerShape(12.dp)) {
+        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("还没有用车记录", style = MaterialTheme.typography.titleMedium)
+            Text("从一次保养或维修开始，留下可追溯的用车档案。", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("新增保养", color = MaterialTheme.colorScheme.primary, modifier = Modifier.clickable(onClick = onAddMaintenance).padding(4.dp))
+                Text("新增维修", color = MaterialTheme.colorScheme.primary, modifier = Modifier.clickable(onClick = onAddRepair).padding(4.dp))
+            }
+        }
     }
 }
 
 @Composable
 private fun EmptyGarage(onEditVehicle: () -> Unit) {
-    Card(
-        shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-    ) {
-        Column(
-            modifier = Modifier.padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Surface(
-                color = MaterialTheme.colorScheme.primaryContainer,
-                shape = RoundedCornerShape(16.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.DirectionsCar,
-                    contentDescription = null,
-                    modifier = Modifier.padding(12.dp).size(26.dp),
-                    tint = MaterialTheme.colorScheme.primary,
-                )
-            }
-            Text("你的车库还没有车辆", style = MaterialTheme.typography.titleLarge)
-            Text(
-                "先建立车辆档案，保养提醒、费用与记录才会为你服务。",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyLarge,
-            )
-            Button(onClick = onEditVehicle, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Filled.Add, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text("添加车辆档案")
-            }
-        }
+    Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Icon(Icons.Filled.DirectionsCar, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(36.dp))
+        Text("从一辆车开始", style = MaterialTheme.typography.headlineMedium)
+        Text("建立车辆档案后，保养、维修、费用与提醒都会汇集在这里。", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Button(onClick = onEditVehicle) { Icon(Icons.Filled.Add, null); Spacer(Modifier.width(6.dp)); Text("添加车辆档案") }
     }
 }
 
-@Composable
-private fun VehicleHero(vehicle: Vehicle) {
-    Card(
-        shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-    ) {
-        Column {
-            Image(
-                painter = painterResource(R.drawable.vehicle_home_hero),
-                contentDescription = "车辆展示图",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(188.dp)
-                    .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)),
-            )
-            Column(
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Filled.DirectionsCar,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text("当前车辆", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Text("${vehicle.brand} ${vehicle.model}", style = MaterialTheme.typography.titleLarge)
-                Text(
-                    "当前里程  ${vehicle.currentMileage} km",
-                    style = MaterialTheme.typography.displaySmall,
-                )
-            }
-        }
-    }
-}
+private fun Int.formatMileage(): String = java.lang.String.format(java.util.Locale.CHINA, "%,d", this)
 
-@Composable
-private fun MaintenancePriority(status: ReminderStatus, onAddMaintenance: () -> Unit) {
-    val isAttentionNeeded = status == ReminderStatus.DUE_SOON || status == ReminderStatus.OVERDUE
-    val contentColor = if (isAttentionNeeded) {
-        MaterialTheme.colorScheme.secondary
-    } else {
-        MaterialTheme.colorScheme.primary
-    }
-    Surface(
-        color = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(24.dp),
-        modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(24.dp)),
-    ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(color = MaterialTheme.colorScheme.background, shape = RoundedCornerShape(14.dp)) {
-                    Icon(
-                        imageVector = Icons.Filled.Build,
-                        contentDescription = null,
-                        modifier = Modifier.padding(10.dp).size(24.dp),
-                        tint = contentColor,
-                    )
-                }
-                Spacer(Modifier.width(12.dp))
-                Column(Modifier.weight(1f)) {
-                    Text("下一次保养", style = MaterialTheme.typography.labelLarge, color = contentColor)
-                    Text(status.displayName(), style = MaterialTheme.typography.titleLarge)
-                }
-            }
-            Text(status.description(), color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Button(
-                onClick = onAddMaintenance,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-            ) {
-                Icon(Icons.Filled.Add, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text("添加保养记录")
-            }
-        }
-    }
-}
-
-@Composable
-private fun LatestService(
-    summary: HomeSummary,
-    onAddMaintenance: () -> Unit,
-    onAddRepair: () -> Unit,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("最近服务", style = MaterialTheme.typography.titleLarge)
-            TextButton(onClick = onAddMaintenance) { Text("查看保养") }
-        }
-        Surface(
-            modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(22.dp)),
-            shape = RoundedCornerShape(22.dp),
-        ) {
-            Column {
-                ServiceRow(
-                    icon = Icons.Filled.History,
-                    title = summary.latestMaintenance?.items ?: "还没有保养记录",
-                    detail = summary.latestMaintenance?.let { "${it.date} · ${it.mileage} km" } ?: "记录一次保养，建立你的养护节奏",
-                    value = summary.latestMaintenance?.let { "¥${it.costCents / 100.0}" } ?: "去添加",
-                    onClick = onAddMaintenance,
-                )
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                ServiceRow(
-                    icon = Icons.Filled.Build,
-                    title = summary.latestRepair?.repairItems ?: "还没有维修记录",
-                    detail = summary.latestRepair?.let { "${it.date} · ${it.mileage} km" } ?: "维修事项会在这里沉淀",
-                    value = summary.latestRepair?.let { "¥${it.costCents / 100.0}" } ?: "去添加",
-                    onClick = onAddRepair,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ServiceRow(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    detail: String,
-    value: String,
-    onClick: () -> Unit,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            shape = RoundedCornerShape(14.dp),
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.padding(10.dp).size(20.dp),
-                tint = MaterialTheme.colorScheme.primary,
-            )
-        }
-        Spacer(Modifier.width(12.dp))
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, maxLines = 1)
-            Text(detail, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
-        }
-        TextButton(onClick = onClick) {
-            Text(value, fontWeight = FontWeight.SemiBold)
-            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.size(16.dp))
-        }
-    }
-}
-
-@Composable
-private fun SpendingSummary(summary: HomeSummary) {
-    val total = (summary.maintenanceCostCents + summary.repairCostCents) / 100.0
-    Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(22.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(20.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Surface(color = MaterialTheme.colorScheme.background, shape = RoundedCornerShape(14.dp)) {
-                Icon(
-                    imageVector = Icons.Filled.Payments,
-                    contentDescription = null,
-                    modifier = Modifier.padding(10.dp).size(22.dp),
-                    tint = MaterialTheme.colorScheme.primary,
-                )
-            }
-            Spacer(Modifier.width(12.dp))
-            Column {
-                Text("累计养车支出", style = MaterialTheme.typography.labelLarge)
-                Text("保养与维修的历史花费", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
-            }
-            Text("¥$total", style = MaterialTheme.typography.titleLarge)
-        }
-    }
-}
-
-private fun ReminderStatus.displayName(): String = when (this) {
-    ReminderStatus.NO_RECORD -> "尚未建立保养节奏"
-    ReminderStatus.NOT_DUE -> "保养状态良好"
-    ReminderStatus.DUE_SOON -> "保养即将到期"
-    ReminderStatus.OVERDUE -> "建议尽快保养"
+private fun ReminderStatus.heroText(): String = when (this) {
+    ReminderStatus.NO_RECORD -> "建立第一条保养记录"
+    ReminderStatus.NOT_DUE -> "当前保养节奏良好"
+    ReminderStatus.DUE_SOON -> "已接近下一次保养"
+    ReminderStatus.OVERDUE -> "建议尽快安排保养"
 }
 
 private fun ReminderStatus.description(): String = when (this) {
-    ReminderStatus.NO_RECORD -> "添加第一条保养记录后，会按里程和日期给你提醒。"
-    ReminderStatus.NOT_DUE -> "当前保养周期正常，继续保持良好的记录习惯。"
-    ReminderStatus.DUE_SOON -> "你的车辆已接近保养周期，建议提前安排时间。"
-    ReminderStatus.OVERDUE -> "你的车辆已超过建议保养周期，建议尽快完成检查。"
+    ReminderStatus.NO_RECORD -> "记录日期与里程后，将按实际情况提示你。"
+    ReminderStatus.NOT_DUE -> "继续保持当前的保养节奏。"
+    ReminderStatus.DUE_SOON -> "建议提前安排时间，避免错过周期。"
+    ReminderStatus.OVERDUE -> "已超过建议周期，请尽快完成检查。"
 }

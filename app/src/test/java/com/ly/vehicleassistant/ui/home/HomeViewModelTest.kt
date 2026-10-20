@@ -63,6 +63,8 @@ class HomeViewModelTest {
             assertEquals(2L, viewModel.uiState.value.latestRepair?.id)
             assertEquals(55_000L, viewModel.uiState.value.maintenanceCostCents)
             assertEquals(62_000L, viewModel.uiState.value.repairCostCents)
+            assertEquals(4, viewModel.uiState.value.recordCount)
+            assertEquals(117_000L, viewModel.uiState.value.totalCostCents)
             assertEquals(ReminderStatus.DUE_SOON, viewModel.uiState.value.reminderStatus)
         } finally {
             Dispatchers.resetMain()

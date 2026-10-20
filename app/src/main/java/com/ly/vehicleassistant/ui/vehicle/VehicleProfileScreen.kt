@@ -5,12 +5,20 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,16 +36,21 @@ import com.ly.vehicleassistant.domain.repository.VehicleRepository
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
-fun VehicleProfileScreen(repository: VehicleRepository) {
+fun VehicleProfileScreen(repository: VehicleRepository, onBack: () -> Unit) {
     val viewModel = remember(repository) { VehicleProfileViewModel(repository) }
     val state by viewModel.uiState.collectAsState()
     var fuelMenuExpanded by remember { mutableStateOf(false) }
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("车辆档案")
+        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+            }
+            Text("车辆档案", style = MaterialTheme.typography.headlineMedium)
+        }
         OutlinedTextField(
             value = state.brand,
             onValueChange = { viewModel.onEvent(VehicleProfileEvent.BrandChanged(it)) },
@@ -95,7 +108,7 @@ fun VehicleProfileScreen(repository: VehicleRepository) {
                 }
             }
         }
-        state.errorMessage?.let { Text(it) }
+        state.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         Button(
             onClick = { viewModel.onEvent(VehicleProfileEvent.SaveClicked) },
             enabled = !state.isSaving,
@@ -103,7 +116,9 @@ fun VehicleProfileScreen(repository: VehicleRepository) {
         ) {
             Text(if (state.isSaving) "保存中…" else "保存车辆")
         }
-        if (state.saved) Text("车辆档案已保存")
+        if (state.saved) {
+            Text("车辆档案已保存", color = MaterialTheme.colorScheme.primary)
+        }
     }
 }
 

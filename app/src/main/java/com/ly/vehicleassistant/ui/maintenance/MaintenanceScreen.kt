@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.History
@@ -28,6 +29,8 @@ import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -52,7 +55,7 @@ import com.ly.vehicleassistant.domain.repository.VehicleRepository
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
-fun MaintenanceScreen(repository: VehicleRepository) {
+fun MaintenanceScreen(repository: VehicleRepository, onBack: () -> Unit) {
     val viewModel = remember(repository) { MaintenanceViewModel(repository) }
     val state by viewModel.uiState.collectAsState()
     var typeMenuExpanded by remember { mutableStateOf(false) }
@@ -64,9 +67,14 @@ fun MaintenanceScreen(repository: VehicleRepository) {
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("保养记录", style = MaterialTheme.typography.headlineMedium)
-                Text("记录每次服务，让下一次养护更有把握。", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("保养记录", style = MaterialTheme.typography.headlineMedium)
+                    Text("记录每次服务，让下一次养护更有把握。", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
         item {

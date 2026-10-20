@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.History
@@ -24,6 +25,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -48,7 +51,7 @@ import com.ly.vehicleassistant.domain.repository.VehicleRepository
 import kotlinx.coroutines.launch
 
 @Composable
-fun RepairScreen(repository: VehicleRepository) {
+fun RepairScreen(repository: VehicleRepository, onBack: () -> Unit) {
     val viewModel = remember(repository) { RepairViewModel(repository) }
     val state by viewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
@@ -60,9 +63,14 @@ fun RepairScreen(repository: VehicleRepository) {
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("维修记录", style = MaterialTheme.typography.headlineMedium)
-                Text("沉淀故障与维修细节，让每次处理都有迹可循。", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("维修记录", style = MaterialTheme.typography.headlineMedium)
+                    Text("沉淀故障与维修细节，让每次处理都有迹可循。", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
         item {

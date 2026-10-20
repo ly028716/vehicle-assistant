@@ -42,6 +42,8 @@ private fun com.ly.vehicleassistant.data.model.Vehicle?.toHomeSummary(
             ?: com.ly.vehicleassistant.data.model.ReminderStatus.NO_RECORD,
         latestMaintenance = latestMaintenance,
         latestRepair = latestRepair,
+        maintenanceCount = maintenanceRecords.size,
+        repairCount = repairRecords.size,
         maintenanceCostCents = maintenanceRecords.sumOf { it.costCents },
         repairCostCents = repairRecords.sumOf { it.costCents },
     )
